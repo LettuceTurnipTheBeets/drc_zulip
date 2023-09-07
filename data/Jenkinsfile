@@ -1,0 +1,73 @@
+#!/usr/bin/env groovy
+
+@Library('DRC_Global_Pipeline_Libraries@master')
+
+def account_map = ['prod': '', 'dev': '333509430799']
+
+pipeline {
+  agent {
+    kubernetes {
+      inheritFrom 'terraform-agent'
+      defaultContainer 'cli'
+    }
+  }
+
+  options {
+    buildDiscarder(logRotator(daysToKeepStr: '3', numToKeepStr: '5', artifactDaysToKeepStr: '3'))
+    ansiColor('xterm')
+  }
+
+  environment {
+    APP_NAME = 'zulip'
+  }
+
+  parameters {
+    choice(name: 'environment', choices: ['dev','prod'])
+    choice(name: 'action', choices: ['plan','apply'])
+  }
+
+ stages {
+    stage('Plan') {
+      steps {
+        script {
+          drc_AwsAssumeRole([
+            acctNum: account_map[params.environment],
+            jenkinsRole: 'cloud-build-jenkins-role',
+            appName: env.APP_NAME,
+            bldNum : env.BUILD_NUMBER
+          ])
+
+          sh """
+            make plan env=${environment}
+          """
+        }
+      }
+    }
+    stage('Apply') {
+      when {
+        expression { params.action == "apply" }
+      }
+      steps {
+        script {
+          drc_AwsAssumeRole([
+            acctNum: account_map[params.environment],
+            jenkinsRole: 'cloud-build-jenkins-role',
+            appName: env.APP_NAME,
+            bldNum : env.BUILD_NUMBER
+          ])
+
+          result = drc_AskForPermissionSkip([
+            name     : "Deploy Zulip ${environment} to ${region}?",
+            to_time  : 10,
+            to_unit  : 'MINUTES',
+            id       : "Deploy Zulip ${environment} to ${region}?",
+            message  : "Deploy Zulip ${environment} to ${region}?",
+            submitter: "jekelly,grees,nkovalenko,bpoush,tjensen,atormanen"
+          ])
+          
+          sh "make apply env=${environment}"
+        }
+      }
+    }
+  }
+}
