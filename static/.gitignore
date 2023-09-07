@@ -1,9 +1,0 @@
-# Code
-/webpack-bundles
-
-# Generated static files
-
-# Copied zulip_bots package
-/generated/bots/
-# From emoji
-/generated/emoji

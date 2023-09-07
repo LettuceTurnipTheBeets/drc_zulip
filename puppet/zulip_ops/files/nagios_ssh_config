@@ -1,6 +1,0 @@
-Host *
-  ControlMaster no
-  ControlPath /tmp/ssh-%C
-
-  ServerAliveInterval 30
-  ServerAliveCountMax 3
