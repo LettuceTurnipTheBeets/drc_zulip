@@ -38,12 +38,13 @@ pipeline {
           } else {
             IS_DEV = true
           }
+          println(IS_DEV)
         }
       }
     }
     stage ('Dev Apply') {
       when {
-        branch 'infrastructure'
+        // branch 'infrastructure'
         expression { IS_DEV }
       }
       steps {
