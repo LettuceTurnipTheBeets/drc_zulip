@@ -33,7 +33,7 @@ pipeline {
       when {
         branch 'infrastructure'
         expression { 
-          params.ENVIRONMENT != 'prod'
+          !params.ENVIRONMENT.equals('prod')
         }
       }
       steps {
