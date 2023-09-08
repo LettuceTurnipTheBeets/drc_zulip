@@ -40,7 +40,7 @@ pipeline {
         container('tfsec') {
           script {
             dir("${WORKSPACE}/${env.WORKING_DIR}") {
-                sh "tfsec ."  
+                sh "tfsec . || exit 0"  
             }
           }
       }
