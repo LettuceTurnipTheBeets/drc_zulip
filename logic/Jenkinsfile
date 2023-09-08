@@ -115,6 +115,8 @@ def generateTerraformTasks(def tiers) {
         stage("${tierShortname}-${region}") {
           println("${tierShortname} ${region}")
 
+          sh 'aws sts get-caller-identity'
+
           dir("${WORKSPACE}/${env.WORKING_DIR}") {
             sh "make plan env=${tierShortname}"
             if (!dryRun) {
