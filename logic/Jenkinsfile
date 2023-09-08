@@ -33,7 +33,7 @@ pipeline {
     stage ('Configure') {
       steps {
         script {
-          if params.ENVIRONMENT == 'prod' {
+          if (params.ENVIRONMENT == 'prod') {
             IS_DEV = false
           } else {
             IS_DEV = true
