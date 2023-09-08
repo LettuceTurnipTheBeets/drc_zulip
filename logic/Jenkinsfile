@@ -2,8 +2,9 @@
 
 @Library('DRC_Global_Pipeline_Libraries@master')
 
-def acct_map = ['shared-services-le': '333509430799', 'shared-services-prod': '911870898277']
+def acct_map = ['le': '333509430799', 'prod': '911870898277']
 IS_DEV = true
+ACCOUNT_NUM = null
 
 pipeline {
   environment {
@@ -35,8 +36,10 @@ pipeline {
         script {
           if (params.ENVIRONMENT == 'prod') {
             IS_DEV = false
+            ACCOUNT_NUM = 911870898277
           } else {
             IS_DEV = true
+            ACCOUNT_NUM = 333509430799
           }
           println(IS_DEV)
         }
@@ -49,7 +52,7 @@ pipeline {
       }
       steps {
         script {
-          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: acct_map[params.ENVIRONMENT], appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
+          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: ACCOUNT_NUM, appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
           def tiers = [
             [name: "dev",    , dryRun: params.DRYRUN, region: params.REGION, account_num: acct_map[params.ENVIRONMENT]]
           ]
@@ -65,7 +68,7 @@ pipeline {
       }
       steps {
         script {
-          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: acct_map[params.ENVIRONMENT], appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
+          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: ACCOUNT_NUM, appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
 
           def tiers = [
             [name: "prod", askForPermission: true, dryRun: params.DRYRUN, region: params.REGION, account_num: acct_map[params.ENVIRONMENT]]
