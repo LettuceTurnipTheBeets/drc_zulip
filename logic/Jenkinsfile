@@ -32,9 +32,7 @@ pipeline {
   stages {
     stage ('Scan') {
       when {
-        anyOf {
-          branch 'infrastructure'
-        }
+        branch 'infrastructure'
       }
       steps {
         container('tfsec') {
