@@ -36,13 +36,16 @@ pipeline {
           branch 'infrastructure'
         }
       }
-      container('tfsec') {
+      steps {
+        container('tfsec') {
           script {
             dir("${WORKSPACE}/${env.WORKING_DIR}") {
                 sh "tfsec ."  
             }
           }
       }
+      }
+      
     }
     stage ('Dev') {
       when {
