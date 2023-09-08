@@ -1,0 +1,120 @@
+#!/usr/bin/env groovy
+
+@Library('DRC_Global_Pipeline_Libraries@master')
+
+def acct_map = ['shared-services-le': '333509430799', 'shared-services-prod': '911870898277']
+
+pipeline {
+  environment {
+    WORKING_DIR = "logic"
+    APP_NAME = 'Zulip'
+  }
+  agent {
+    kubernetes(
+      drc_k8_agent(templates: [
+        [name: 'terraform', isDefault: true]
+      ])
+    )
+  }
+
+  options {
+    buildDiscarder(logRotator(daysToKeepStr: '3', artifactDaysToKeepStr: '3'))
+    ansiColor('xterm')
+  }
+
+  parameters {
+    choice(choices: ['dev'], description: 'Deploy to le or prod?', name: 'ENVIRONMENT')
+    choice(choices: ['true', 'false'], description: 'Dry run (tf plan) or deploy (tf apply)?', name: 'DRYRUN')
+    choice(choices: ['us-east-2', 'us-east-1'], description: 'aws region to deploy to.', name: 'REGION')
+  }
+
+  stages {
+    stage ('Dev') {
+      when {
+        expression { 
+          params.ENVIRONMENT != 'prod'
+        }
+        anyOf {
+          branch 'infrastructure'
+        }
+      }
+      steps {
+        script {
+          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: acct_map[params.ENVIRONMENT], appName: "${BRANCH_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
+          def tiers = [
+            [name: "dev",    , dryRun: params.DRYRUN, region: params.REGION, account_num: acct_map[params.ENVIRONMENT]]
+          ]
+          def terraformTasksToExec = generateTerraformTasks tiers
+          terraformTasksToExec.each { k, v -> v() }
+        }
+      }
+    }
+    stage ('Prod') {
+      when {
+        branch 'infrastructure'
+        expression { 
+          params.ENVIRONMENT == 'prod'
+        }
+      }
+      steps {
+        script {
+          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: acct_map[params.ENVIRONMENT], appName: "${BRANCH_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
+
+          def tiers = [
+            [name: "prod", askForPermission: true, dryRun: params.DRYRUN, region: params.REGION, account_num: acct_map[params.ENVIRONMENT]]
+          ]
+          def terraformTasksToExec = generateTerraformTasks tiers
+
+          terraformTasksToExec.each { k, v -> v() }
+        }
+      }
+    }
+  }
+}
+
+def generateTerraformTasks(def tiers) {
+  def tasks = [:]
+
+  tiers.each { tier ->
+    def tierShortname = tier.name
+    def region = tier.region
+    def dryRun = tier.dryRun
+    def account_num = tier.account_num
+
+    tasks["${tierShortname}-${region}"] = {
+
+      def result = 'SUCCESS'
+
+      if(!dryRun) {
+        result = drc_AskForPermissionSkip([
+          name     : "Deploy ${env.APP_NAME} ${region} to ${tierShortname}",
+          to_time  : 10,
+          to_unit  : 'MINUTES',
+          id       : "${env.APP_NAME}-${region}",
+          message  : "Deploy ${env.APP_NAME} ${region} to ${tierShortname} or abort?",
+          submitter: "pnambiar,grees,nkovalenko,bpoush,tjensen,atormanen,jwdunn"
+        ])
+      }
+     
+      if (result == 'ABORTED') {
+        println('pipeline aborted')
+        currentBuild.result = 'ABORTED'
+        error("Aborting the build.")
+      } else if (result == 'SKIPPED') {
+        echo "SKIP"
+      } else {
+        stage("${tierShortname}-${region}") {
+          println("${tierShortname} ${region}")
+
+          dir("${WORKSPACE}/${env.WORKING_DIR}") {
+            sh "make plan env=${tierShortname}"
+            if (!dryRun) {
+              // sh "make apply env=${tierShortname}"
+            }
+          }
+        }
+      }
+    }
+  }
+  return tasks
+}
