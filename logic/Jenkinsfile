@@ -12,8 +12,7 @@ pipeline {
   agent {
     kubernetes(
       drc_k8_agent(templates: [
-        [name: 'terraform', isDefault: true],
-        [name: 'tfsec', isDefault: false]
+        [name: 'terraform', isDefault: true]
       ])
     )
   }
