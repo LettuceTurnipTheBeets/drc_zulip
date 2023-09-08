@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-@Library('DRC_Global_Pipeline_Libraries@master')
+@Library('DRC_Global_Pipeline_Libraries@tf')
 
 def acct_map = ['shared-services-le': '333509430799', 'shared-services-prod': '911870898277']
 
@@ -12,7 +12,8 @@ pipeline {
   agent {
     kubernetes(
       drc_k8_agent(templates: [
-        [name: 'terraform', isDefault: true]
+        [name: 'terraform', isDefault: true],
+        [name: 'tfsec', isDefault: false]
       ])
     )
   }
@@ -29,6 +30,22 @@ pipeline {
   }
 
   stages {
+    stage ('Scan') {
+      when {
+        anyOf {
+          branch 'infrastructure'
+        }
+      }
+      container('tfsec') {
+        steps {
+          script {
+            dir("${WORKSPACE}/${env.WORKING_DIR}") {
+                sh "tfsec ."  
+            }
+          }
+        }
+      }
+    }
     stage ('Dev') {
       when {
         expression { 
