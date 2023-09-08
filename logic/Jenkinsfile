@@ -120,7 +120,7 @@ def generateTerraformTasks(def tiers) {
           dir("${WORKSPACE}/${env.WORKING_DIR}") {
             sh "make plan env=${tierShortname}"
             if (!dryRun) {
-              // sh "make apply env=${tierShortname}"
+              sh "make apply env=${tierShortname}"
             }
           }
         }
