@@ -2,7 +2,6 @@
 
 @Library('DRC_Global_Pipeline_Libraries@master')
 
-def acct_map = ['le': '177429746880', 'prod': '385888483640']
 IS_DEV = true
 ACCOUNT_NUM = null
 
@@ -54,7 +53,7 @@ pipeline {
         script {
           drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: ACCOUNT_NUM, appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
           def tiers = [
-            [name: "dev",    , dryRun: params.DRYRUN, region: params.REGION, account_num: acct_map[params.ENVIRONMENT]]
+            [name: "dev",    , dryRun: params.DRYRUN, region: params.REGION, account_num: ACCOUNT_NUM]
           ]
           def terraformTasksToExec = generateTerraformTasks tiers
           terraformTasksToExec.each { k, v -> v() }
@@ -71,7 +70,7 @@ pipeline {
           drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', acctNum: ACCOUNT_NUM, appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
 
           def tiers = [
-            [name: "prod", askForPermission: true, dryRun: params.DRYRUN, region: params.REGION, account_num: acct_map[params.ENVIRONMENT]]
+            [name: "prod", askForPermission: true, dryRun: params.DRYRUN, region: params.REGION, account_num: ACCOUNT_NUM]
           ]
           def terraformTasksToExec = generateTerraformTasks tiers
 
