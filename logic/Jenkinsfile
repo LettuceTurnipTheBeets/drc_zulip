@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-@Library('DRC_Global_Pipeline_Libraries@tf')
+@Library('DRC_Global_Pipeline_Libraries@master')
 
 def acct_map = ['shared-services-le': '333509430799', 'shared-services-prod': '911870898277']
 
@@ -30,28 +30,11 @@ pipeline {
   }
 
   stages {
-    stage ('Scan') {
-    //   when {
-    //     branch 'infrastructure'
-    //   }
-      steps {
-        container('tfsec') {
-          script {
-            dir("${WORKSPACE}/${env.WORKING_DIR}") {
-                sh "tfsec . || exit 0"  
-            }
-          }
-      }
-      }
-      
-    }
-    stage ('Dev') {
+    stage ('Dev Apply') {
       when {
+        branch 'infrastructure'
         expression { 
           params.ENVIRONMENT != 'prod'
-        }
-        anyOf {
-          branch 'infrastructure'
         }
       }
       steps {
