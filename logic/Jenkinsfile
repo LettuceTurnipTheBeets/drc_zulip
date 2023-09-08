@@ -67,7 +67,7 @@ pipeline {
       }
       steps {
         script {
-          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', params.REGION, acctNum: ACCOUNT_NUM, appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
+          drc_AwsAssumeRole([jenkinsRole: 'cloud-build-jenkins-role', region: params.REGION, acctNum: ACCOUNT_NUM, appName: "${env.APP_NAME}", bldNum : "${BUILD_NUMBER}", timeout: 3600])
 
           def tiers = [
             [name: "prod", askForPermission: true, dryRun: params.DRYRUN, region: params.REGION, account_num: ACCOUNT_NUM]
