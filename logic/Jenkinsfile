@@ -3,6 +3,7 @@
 @Library('DRC_Global_Pipeline_Libraries@master')
 
 def acct_map = ['shared-services-le': '333509430799', 'shared-services-prod': '911870898277']
+IS_DEV = true
 
 pipeline {
   environment {
@@ -29,12 +30,21 @@ pipeline {
   }
 
   stages {
+    stage ('Configure') {
+      steps {
+        script {
+          if params.ENVIRONMENT == 'prod' {
+            IS_DEV = false
+          } else {
+            IS_DEV = true
+          }
+        }
+      }
+    }
     stage ('Dev Apply') {
       when {
         branch 'infrastructure'
-        expression { 
-          !(params.ENVIRONMENT == 'prod')
-        }
+        expression { IS_DEV }
       }
       steps {
         script {
@@ -50,9 +60,7 @@ pipeline {
     stage ('Prod') {
       when {
         branch 'infrastructure'
-        expression { 
-          params.ENVIRONMENT == 'prod'
-        }
+        expression { !IS_DEV }
       }
       steps {
         script {
