@@ -37,13 +37,11 @@ pipeline {
         }
       }
       container('tfsec') {
-        steps {
           script {
             dir("${WORKSPACE}/${env.WORKING_DIR}") {
                 sh "tfsec ."  
             }
           }
-        }
       }
     }
     stage ('Dev') {
