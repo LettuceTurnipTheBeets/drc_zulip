@@ -91,36 +91,35 @@ def generateTerraformTasks(def tiers) {
     def account_num = tier.account_num
 
     tasks["${tierShortname}-${region}"] = {
-
-      def result = 'SUCCESS'
-
-      if(!dryRun) {
-        result = drc_AskForPermissionSkip([
-          name     : "Deploy ${env.APP_NAME} ${region} to ${tierShortname}",
-          to_time  : 10,
-          to_unit  : 'MINUTES',
-          id       : "${env.APP_NAME}-${region}",
-          message  : "Deploy ${env.APP_NAME} ${region} to ${tierShortname} or abort?",
-          submitter: "pnambiar,grees,nkovalenko,bpoush,tjensen,atormanen,jwdunn"
-        ])
-      }
-     
-      if (result == 'ABORTED') {
-        println('pipeline aborted')
-        currentBuild.result = 'ABORTED'
-        error("Aborting the build.")
-      } else if (result == 'SKIPPED') {
-        echo "SKIP"
-      } else {
-        stage("${tierShortname}-${region}") {
-          println("${tierShortname} ${region}")
+      stage("${tierShortname}-${region}") {
+        dir("${WORKSPACE}/${env.WORKING_DIR}") {
 
           sh 'aws sts get-caller-identity'
+          sh "make plan env=${tierShortname}"
 
-          dir("${WORKSPACE}/${env.WORKING_DIR}") {
-            sh "make plan env=${tierShortname}"
-            if (!dryRun) {
-              sh "make apply env=${tierShortname}"
+          def result = 'SUCCESS'
+          if(!dryRun) {
+            result = drc_AskForPermissionSkip([
+              name     : "Deploy ${env.APP_NAME} ${region} to ${tierShortname}",
+              to_time  : 10,
+              to_unit  : 'MINUTES',
+              id       : "${env.APP_NAME}-${region}",
+              message  : "Deploy ${env.APP_NAME} ${region} to ${tierShortname} or abort?",
+              submitter: "pnambiar,grees,nkovalenko,bpoush,tjensen,atormanen,jwdunn"
+            ])
+          }
+        
+          if (result == 'ABORTED') {
+            println('pipeline aborted')
+            currentBuild.result = 'ABORTED'
+            error("Aborting the build.")
+          } else if (result == 'SKIPPED') {
+            echo "SKIP"
+          } else {
+            println("${tierShortname} ${region}")
+              if (!dryRun) {
+                println('apply')
+                // sh "make apply env=${tierShortname}"
             }
           }
         }
