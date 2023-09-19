@@ -1,0 +1,18 @@
+@Library('DRC_Global_Pipeline_Libraries@master')
+
+def has_failures = false
+
+pipeline {
+    
+
+    stages {
+         stage('Configure') {
+            steps {
+                script {
+                    println("test")
+                }
+            }
+        }
+        
+    }
+}
