@@ -9,7 +9,7 @@ pipeline {
          stage('Configure') {
             steps {
                 script {
-                    println("test2")
+                    println("test3")
                 }
             }
         }
